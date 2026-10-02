@@ -1,3 +1,3 @@
 # Pipeline-Activity-Analytics
 
-[![Open in Bolt](https://bolt.new/static/open-in-bolt.svg)](https://bolt.new/~/sb1-miqfxipb)
+This is a Webpage to analyze the execution pattern for activities inside a pipeline.
