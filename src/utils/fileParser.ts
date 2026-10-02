@@ -29,7 +29,6 @@ export async function parseFile(file: File): Promise<{ rows: RawRow[]; headers: 
   const rows: RawRow[] = json.map(row => {
     const obj: Record<string, unknown> = {};
     for (const h of EXPECTED_HEADERS) {
-      // Try exact match first, then trimmed/cleaned match
       if (row[h] !== undefined) {
         obj[h] = row[h];
       } else {
@@ -37,8 +36,24 @@ export async function parseFile(file: File): Promise<{ rows: RawRow[]; headers: 
         obj[h] = cleanedKey ? row[cleanedKey] : '';
       }
     }
+
+    let durationStr = String(obj.duration ?? '');
+    const durationRaw = obj.duration;
+    if (typeof durationRaw === 'number' && durationRaw > 0) {
+      const totalSeconds = Math.round(durationRaw * 86400);
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
+      durationStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    let timestampStr = String(obj.PreciseTimeStamp ?? '');
+    const tsRaw = obj.PreciseTimeStamp;
+    if (tsRaw instanceof Date) {
+      timestampStr = tsRaw.toISOString();
+    }
+
     return {
-      PreciseTimeStamp: String(obj.PreciseTimeStamp ?? ''),
+      PreciseTimeStamp: timestampStr,
       pipelineRunId: String(obj.pipelineRunId ?? ''),
       activityRunId: String(obj.activityRunId ?? ''),
       activityType: String(obj.activityType ?? ''),
@@ -48,7 +63,7 @@ export async function parseFile(file: File): Promise<{ rows: RawRow[]; headers: 
       dataFactoryName: String(obj.dataFactoryName ?? ''),
       errorCode: String(obj.errorCode ?? ''),
       effectiveIntegrationRuntime: String(obj.effectiveIntegrationRuntime ?? ''),
-      duration: String(obj.duration ?? ''),
+      duration: durationStr,
       category: String(obj.category ?? ''),
     };
   });

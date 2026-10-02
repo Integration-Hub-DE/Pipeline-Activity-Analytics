@@ -117,6 +117,10 @@ export function pivotRows(rows: RawRow[]): PivotedRow[] {
     const dateSource = endTime ?? inProgress ?? queued;
     const runDate = formatDate(dateSource);
 
+    // Earliest execution timestamp for ordering — Queued if present, else InProgress, else EndTime
+    const startSource = queued ?? inProgress ?? endTime ?? first.PreciseTimeStamp;
+    const startTime = new Date(startSource).getTime() || 0;
+
     pivoted.push({
       pipelineRunId: first.pipelineRunId,
       activityRunId: first.activityRunId,
@@ -131,14 +135,11 @@ export function pivotRows(rows: RawRow[]): PivotedRow[] {
       duration: durationStr || null,
       durationSeconds,
       runDate,
+      startTime,
     });
   }
 
-  pivoted.sort((a, b) => {
-    const ta = new Date(a.EndTime ?? a.InProgress ?? a.Queued ?? '').getTime() || 0;
-    const tb = new Date(b.EndTime ?? b.InProgress ?? b.Queued ?? '').getTime() || 0;
-    return ta - tb;
-  });
+  pivoted.sort((a, b) => a.startTime - b.startTime);
 
   return pivoted;
 }
@@ -165,11 +166,7 @@ export function groupByActivity(rows: PivotedRow[]): ActivityData[] {
     activities.push({
       activityName: name,
       activityType: activityRows[0]?.activityType ?? '',
-      rows: activityRows.sort((a, b) => {
-        const ta = new Date(a.EndTime ?? a.InProgress ?? a.Queued ?? '').getTime() || 0;
-        const tb = new Date(b.EndTime ?? b.InProgress ?? b.Queued ?? '').getTime() || 0;
-        return ta - tb;
-      }),
+      rows: activityRows.sort((a, b) => a.startTime - b.startTime),
       minDuration,
       maxDuration,
       avgDuration,

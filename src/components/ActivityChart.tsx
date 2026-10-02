@@ -22,6 +22,7 @@ export default function ActivityChart({ activity }: ActivityChartProps) {
         idx: i,
         duration: r.durationSeconds,
         date: r.runDate,
+        dayLabel: r.runDate ? r.runDate.split('-')[0] : '',
         endTime: r.EndTime,
         status: r.Status,
         pipelineName: r.pipelineName,
@@ -179,17 +180,22 @@ export default function ActivityChart({ activity }: ActivityChartProps) {
               </g>
             ))}
 
-            {chartData.length <= 8 && chartData.map((d, i) => (
-              <text
-                key={i}
-                x={xScale(i)} y={height - padBottom + 18}
-                textAnchor="middle"
-                className="fill-slate-400"
-                style={{ fontSize: '9px' }}
-              >
-                {d.date?.replace(/^\d{2}-/, '') ?? ''}
-              </text>
-            ))}
+            {chartData.map((d, i) => {
+              const label = d.date ?? '';
+              const showLabel = chartData.length <= 12 || i % Math.ceil(chartData.length / 8) === 0;
+              if (!showLabel) return null;
+              return (
+                <text
+                  key={i}
+                  x={xScale(i)} y={height - padBottom + 18}
+                  textAnchor="middle"
+                  className="fill-slate-400"
+                  style={{ fontSize: '9px' }}
+                >
+                  {label}
+                </text>
+              );
+            })}
           </svg>
         )}
       </div>

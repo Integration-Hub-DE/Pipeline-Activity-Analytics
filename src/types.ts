@@ -29,6 +29,7 @@ export interface PivotedRow {
   duration: string | null;
   durationSeconds: number | null;
   runDate: string | null;
+  startTime: number;
 }
 
 export interface ActivityData {

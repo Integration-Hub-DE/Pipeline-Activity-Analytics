@@ -13,6 +13,7 @@ interface ProcessedData {
   hasCancelling: boolean;
   pipelineName: string;
   executionOrder: string[];
+  executionDate: string;
 }
 
 const ACTIVE_STATUSES = ['Succeeded', 'Failed', 'Cancelled'];
@@ -52,7 +53,11 @@ export default function App() {
         return ordered;
       })();
 
-      setData({ pivotedRows: pivoted, activities, hasCancelling, pipelineName, executionOrder });
+      const executionDate = pivoted.length > 0
+        ? new Date(pivoted[0].Queued ?? pivoted[0].InProgress ?? pivoted[0].EndTime ?? '').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        : '';
+
+      setData({ pivotedRows: pivoted, activities, hasCancelling, pipelineName, executionOrder, executionDate });
       setFileName(file.name);
     } catch (err) {
       setError(`Could not read the file: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -149,7 +154,7 @@ export default function App() {
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
               <h3 className="text-sm font-semibold text-slate-700 mb-4">
-                Activities executed by {data.pipelineName}
+                Activities executed by {data.pipelineName}{data.executionDate ? ` — ${data.executionDate}` : ''}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2">
                 {data.executionOrder.map((name, idx) => (
