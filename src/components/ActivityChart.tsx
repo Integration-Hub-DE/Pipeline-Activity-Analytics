@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { ActivityData } from '@/types';
 import { formatDuration, formatTimestamp } from '@/utils/pivot';
-import { TrendingUp, Clock, CheckCircle2, XCircle, Activity as ActivityIcon } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Activity as ActivityIcon, Copy } from 'lucide-react';
 
 interface ActivityChartProps {
   activity: ActivityData;
@@ -13,6 +13,28 @@ const STATUS_COLORS: Record<string, string> = {
   Cancelled: '#f59e0b',
 };
 
+function CopyableValue({ label, value }: { label: string; value: string }) {
+  const copyValue = () => {
+    void navigator.clipboard?.writeText(value);
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <span className="w-[58px] flex-shrink-0 text-slate-400">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-slate-100" title={value}>{value}</span>
+      <button
+        type="button"
+        onClick={copyValue}
+        className="pointer-events-auto flex-shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+        aria-label={`Copy ${label.toLowerCase()}`}
+        title={`Copy ${label.toLowerCase()}`}
+      >
+        <Copy className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
 export default function ActivityChart({ activity }: ActivityChartProps) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
@@ -22,10 +44,11 @@ export default function ActivityChart({ activity }: ActivityChartProps) {
         idx: i,
         duration: r.durationSeconds,
         date: r.runDate,
-        dayLabel: r.runDate ? r.runDate.split('-')[0] : '',
         endTime: r.EndTime,
         status: r.Status,
         pipelineName: r.pipelineName,
+        pipelineRunId: r.pipelineRunId,
+        activityRunId: r.activityRunId,
       }))
       .filter(d => d.duration !== null);
   }, [activity.rows]);
@@ -141,7 +164,11 @@ export default function ActivityChart({ activity }: ActivityChartProps) {
             )}
 
             {chartData.map((d, i) => (
-              <g key={i}>
+              <g
+                key={i}
+                onMouseEnter={() => setHoverIdx(i)}
+                onMouseLeave={() => setHoverIdx(null)}
+              >
                 <circle
                   cx={xScale(i)}
                   cy={yScale(d.duration!)}
@@ -150,32 +177,24 @@ export default function ActivityChart({ activity }: ActivityChartProps) {
                   stroke="white"
                   strokeWidth="2"
                   className="cursor-pointer transition-all duration-200"
-                  onMouseEnter={() => setHoverIdx(i)}
-                  onMouseLeave={() => setHoverIdx(null)}
                 />
-                {(hoverIdx === i) && (
-                  <g>
-                    <rect
-                      x={Math.min(xScale(i) + 10, width - 175)}
-                      y={yScale(d.duration!) - 55}
-                      width="165" height="48" rx="6"
-                      fill="#1e293b" opacity="0.95"
-                    />
-                    <text
-                      x={Math.min(xScale(i) + 18, width - 167)}
-                      y={yScale(d.duration!) - 38}
-                      className="fill-white" style={{ fontSize: '10px', fontWeight: 600 }}
-                    >
-                      {formatDuration(d.duration)}
-                    </text>
-                    <text
-                      x={Math.min(xScale(i) + 18, width - 167)}
-                      y={yScale(d.duration!) - 22}
-                      className="fill-slate-300" style={{ fontSize: '9px' }}
-                    >
-                      {d.date} · {d.status}
-                    </text>
-                  </g>
+                {hoverIdx === i && (
+                  <foreignObject
+                    x={Math.min(Math.max(xScale(i) - 105, 4), width - 214)}
+                    y={Math.max(yScale(d.duration!) - 122, 4)}
+                    width="210"
+                    height="116"
+                    className="overflow-visible"
+                  >
+                    <div className="w-[210px] rounded-lg bg-slate-800 px-3 py-2 text-left text-[9px] leading-4 text-white shadow-xl">
+                      <div className="mb-1 flex items-center justify-between border-b border-slate-600 pb-1">
+                        <span className="font-semibold text-white">{d.status}</span>
+                        <span className="text-slate-300">{formatDuration(d.duration)}</span>
+                      </div>
+                      <CopyableValue label="Pipeline run" value={d.pipelineRunId} />
+                      <CopyableValue label="Activity run" value={d.activityRunId} />
+                    </div>
+                  </foreignObject>
                 )}
               </g>
             ))}

@@ -117,8 +117,8 @@ export function pivotRows(rows: RawRow[]): PivotedRow[] {
     const dateSource = endTime ?? inProgress ?? queued;
     const runDate = formatDate(dateSource);
 
-    // Earliest execution timestamp for ordering — Queued if present, else InProgress, else EndTime
-    const startSource = queued ?? inProgress ?? endTime ?? first.PreciseTimeStamp;
+    // Use the actual start of execution for ordering, falling back to queue and terminal timestamps.
+    const startSource = inProgress ?? queued ?? endTime ?? first.PreciseTimeStamp;
     const startTime = new Date(startSource).getTime() || 0;
 
     pivoted.push({
@@ -176,6 +176,5 @@ export function groupByActivity(rows: PivotedRow[]): ActivityData[] {
     });
   }
 
-  activities.sort((a, b) => a.activityName.localeCompare(b.activityName));
   return activities;
 }
