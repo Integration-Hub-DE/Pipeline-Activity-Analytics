@@ -11,6 +11,28 @@ function cleanHeader(h: string): string {
   return h.trim().replace(/\s+/g, '');
 }
 
+function formatExcelDuration(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '';
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const totalSeconds = Math.round(value * 86400);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const dayStart = Date.UTC(1899, 11, 30);
+    const elapsedDays = Math.max(0, Math.floor((value.getTime() - dayStart) / 86400000));
+    const totalSeconds = elapsedDays * 86400 + value.getUTCHours() * 3600 + value.getUTCMinutes() * 60 + value.getUTCSeconds();
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  return String(value);
+}
+
 export async function parseFile(file: File): Promise<{ rows: RawRow[]; headers: string[] }> {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
@@ -37,14 +59,7 @@ export async function parseFile(file: File): Promise<{ rows: RawRow[]; headers: 
       }
     }
 
-    let durationStr = String(obj.duration ?? '');
-    const durationRaw = obj.duration;
-    if (typeof durationRaw === 'number' && durationRaw > 0) {
-      const totalSeconds = Math.round(durationRaw * 86400);
-      const mins = Math.floor(totalSeconds / 60);
-      const secs = totalSeconds % 60;
-      durationStr = `${mins}:${secs.toString().padStart(2, '0')}`;
-    }
+    const durationStr = formatExcelDuration(obj.duration);
 
     let timestampStr = String(obj.PreciseTimeStamp ?? '');
     const tsRaw = obj.PreciseTimeStamp;
